@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+python-multipart
+moviepy==1.0.3
+openai>=1.0.0
+edge-tts
+requests
+pypdf
+python-docx
+imageio==2.33.1
+python-dotenv
