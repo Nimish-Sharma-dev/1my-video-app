@@ -266,14 +266,25 @@ async def generate_script_endpoint(text: str = Form(...), genre: str = Form(...)
     return await generate_script_ai(text, genre, duration)
 
 @app.post("/create-video")
-async def create_video_endpoint(script: str = Form(...), genre: str = Form(...), background_tasks: BackgroundTasks):
-    script_data = json.loads(script)
+@app.post("/create-video")
+def create_video_endpoint(script: str = Form(...), genre: str = Form(...)):
+    # FIX 1: Removed 'async' - This allows FastAPI to run this in a separate thread
+    # so it doesn't freeze the server while rendering video.
+    # FIX 2: Removed 'background_tasks' since we are waiting for the result.
+    
+    try:
+        script_data = json.loads(script)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON script format")
+
     job_id = str(uuid.uuid4())
-    # Note: Render Free Tier might timeout if we don't respond, 
-    # but for MVP we wait to get the filename.
+    
+    # This will now run in a threadpool, preventing the server from hanging
     filename = create_video_task(job_id, script_data, genre) 
+    
     if filename:
         return {"status": "completed", "video_url": f"/download/{filename}"}
+    
     raise HTTPException(status_code=500, detail="Video generation failed")
 
 @app.get("/download/{filename}")

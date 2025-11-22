@@ -8,8 +8,15 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     && rm -rf /var/lib/apt/lists/*
 
-# Fix ImageMagick policy to allow text rendering
-RUN sed -i '/<policy domain="path" rights="none" pattern="@\*"/d' /etc/ImageMagick-6/policy.xml
+# Fix ImageMagick policy (Smart Check)
+# This checks multiple locations for the file to prevent the build error
+RUN if [ -f /etc/ImageMagick-6/policy.xml ]; then \
+        sed -i '/<policy domain="path" rights="none" pattern="@\*"/d' /etc/ImageMagick-6/policy.xml; \
+    elif [ -f /etc/ImageMagick/policy.xml ]; then \
+        sed -i '/<policy domain="path" rights="none" pattern="@\*"/d' /etc/ImageMagick/policy.xml; \
+    else \
+        echo "Warning: ImageMagick policy.xml not found. Skipping fix."; \
+    fi
 
 WORKDIR /app
 
